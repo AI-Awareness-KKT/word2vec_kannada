@@ -3,3 +3,4 @@ gensim
 scikit-learn
 matplotlib
 numpy
+gunicorn
