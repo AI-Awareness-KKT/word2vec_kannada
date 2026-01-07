@@ -1,5 +1,3 @@
-# Ignore ML model files (uploaded to Render disk)
-model/
 
 # Python virtual environment
 .venv/
