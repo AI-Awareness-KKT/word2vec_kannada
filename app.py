@@ -1,8 +1,14 @@
+# ---------------------------------------------
+# Matplotlib (Render / server safe)
+# ---------------------------------------------
 import matplotlib
 matplotlib.use("Agg")
 
+# ---------------------------------------------
+# Imports
+# ---------------------------------------------
 from flask import Flask, render_template, request
-from gensim.models import Word2Vec
+from gensim.models import KeyedVectors
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
@@ -10,36 +16,36 @@ import os
 import io
 import base64
 
-# -------------------------------------------------
+# ---------------------------------------------
 # Flask App
-# -------------------------------------------------
+# ---------------------------------------------
 app = Flask(__name__)
 
-# -------------------------------------------------
+# ---------------------------------------------
 # Base directory
-# -------------------------------------------------
+# ---------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# -------------------------------------------------
-# Load Word2Vec model (ONLY .model file)
-# -------------------------------------------------
+# ---------------------------------------------
+# Load COMPRESSED Word2Vec model (KeyedVectors)
+# ---------------------------------------------
 MODEL_PATH = os.path.join(
     BASE_DIR,
     "model",
-    "kannada_new_word2vec",
-    "kannada_word2vec.model"
+    "kannada_word2vec_40mb.kv"   # <-- UPDATE NAME IF DIFFERENT
 )
 
 if not os.path.exists(MODEL_PATH):
-    raise FileNotFoundError(f"Model not found at: {MODEL_PATH}")
+    raise FileNotFoundError(f"❌ Model not found at: {MODEL_PATH}")
 
-model = Word2Vec.load(MODEL_PATH)
-print("✅ Word2Vec model loaded")
-print("📘 Vocabulary size:", len(model.wv))
+model = KeyedVectors.load(MODEL_PATH, mmap="r")
 
-# -------------------------------------------------
-# Load Kannada font (optional but recommended)
-# -------------------------------------------------
+print("✅ Word2Vec (KeyedVectors) model loaded")
+print("📘 Vocabulary size:", len(model))
+
+# ---------------------------------------------
+# Load Kannada font (optional)
+# ---------------------------------------------
 FONT_PATH = os.path.join(BASE_DIR, "Font", "Nirmala.ttf")
 kannada_font = fm.FontProperties(fname=FONT_PATH) if os.path.exists(FONT_PATH) else None
 
@@ -48,9 +54,9 @@ if kannada_font:
 else:
     print("⚠ Kannada font not found, text may not render correctly")
 
-# -------------------------------------------------
+# ---------------------------------------------
 # Routes
-# -------------------------------------------------
+# ---------------------------------------------
 @app.route("/", methods=["GET", "POST"])
 def index():
     result = None
@@ -60,13 +66,13 @@ def index():
         word = request.form.get("word", "").strip()
         topn = int(request.form.get("topn", 5))
 
-        if word in model.wv:
+        if word in model:
             # Get similar words
-            similar_words = model.wv.most_similar(word, topn=topn)
+            similar_words = model.most_similar(word, topn=topn)
 
             # Prepare PCA data
             words = [word] + [w for w, _ in similar_words]
-            vectors = [model.wv[w] for w in words]
+            vectors = [model[w] for w in words]
 
             pca = PCA(n_components=2)
             reduced = pca.fit_transform(vectors)
@@ -110,8 +116,8 @@ def index():
         image=image
     )
 
-# -------------------------------------------------
-# Main
-# -------------------------------------------------
+# ---------------------------------------------
+# Local run (Render uses gunicorn, this is safe)
+# ---------------------------------------------
 if __name__ == "__main__":
-    app.run(debug=True, port=5001)
+    app.run(host="0.0.0.0", port=5001, debug=True)
