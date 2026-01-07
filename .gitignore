@@ -1,0 +1,17 @@
+# Ignore ML model files (uploaded to Render disk)
+model/
+
+# Python virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# IDE files
+.idea/
+.vscode/
+
+# OS files
+Thumbs.db
+.DS_Store

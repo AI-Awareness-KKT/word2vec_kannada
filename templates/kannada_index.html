@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Kannada Word2Vec Explorer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Simple Keyboard CDN -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/simple-keyboard@latest/build/css/index.css"
+  />
+  <script
+    src="https://cdn.jsdelivr.net/npm/simple-keyboard@latest/build/index.js">
+  </script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #eef2f7, #dbeafe);
+      color: #1f2937;
+    }
+
+    /* LOGO HEADER */
+    .logo-header {
+      width: 100%;
+      background: #1e3a8a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 12px 10px;
+    }
+
+    .logo-header img {
+      width: 100%;
+      max-width: 1200px;
+      height: auto;
+      object-fit: contain;
+    }
+
+    /* TITLE HEADER */
+    header {
+      background: #1e3a8a;
+      color: #fff;
+      padding: 16px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 26px;
+    }
+
+    header p {
+      margin-top: 6px;
+      opacity: 0.9;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 28px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+
+    h2 {
+      margin-top: 0;
+      color: #1e40af;
+    }
+
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    input {
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #c7d2fe;
+      flex: 1;
+    }
+
+    input[type="number"] {
+      max-width: 150px;
+    }
+
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 22px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    th {
+      background: #eef2ff;
+      color: #1e40af;
+    }
+
+    .error {
+      color: #dc2626;
+      font-weight: 600;
+    }
+
+    .plot img {
+      max-width: 100%;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      color: #6b7280;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- LOGO -->
+<div class="logo-header">
+  <img src="{{ url_for('static', filename='logo.jpg') }}" alt="App Logo">
+</div>
+
+<!-- TITLE -->
+<header>
+  <h1>Kannada Word2Vec Explorer</h1>
+  <p>Semantic Similarity · Kannada Keyboard · PCA</p>
+</header>
+
+<main>
+
+  <!-- INPUT -->
+  <div class="card">
+    <h2>🔤 Enter Kannada Word</h2>
+
+    <form method="POST">
+      <div class="form-row">
+        <input
+          id="input"
+          name="word"
+          placeholder="ಕನ್ನಡ ಪದವನ್ನು ನಮೂದಿಸಿ"
+          required
+          oninput="window.keyboard.setInput(this.value)"
+          onkeydown="handlePhysicalBackspace(event)"
+        />
+
+        <input
+          type="number"
+          name="topn"
+          value="5"
+          min="1"
+          required
+        />
+
+        <button type="submit">Find Similar</button>
+        <button type="button" onclick="clearInput()" style="background:#6b7280;">
+          Clear
+        </button>
+      </div>
+    </form>
+
+    <!-- KEYBOARD -->
+    <div class="simple-keyboard"></div>
+  </div>
+
+  <!-- RESULTS -->
+  {% if result %}
+    <div class="card">
+      <h2>📊 Results</h2>
+
+      {% if result == "Word not found in vocabulary." %}
+        <p class="error">{{ result }}</p>
+      {% else %}
+        <table>
+          <tr>
+            <th>Word</th>
+            <th>Similarity</th>
+          </tr>
+          {% for w, s in result %}
+          <tr>
+            <td>{{ w }}</td>
+            <td>{{ s }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <!-- PCA -->
+  {% if image %}
+    <div class="card plot">
+      <h2>📈 PCA Visualization</h2>
+      <img src="data:image/png;base64,{{ image }}" alt="PCA Plot">
+    </div>
+  {% endif %}
+
+</main>
+
+<footer>
+  Kannada NLP · Word2Vec · Flask
+</footer>
+
+<!-- KEYBOARD LOGIC -->
+<script>
+  const Keyboard = window.SimpleKeyboard?.default || window.SimpleKeyboard;
+
+  window.keyboard = new Keyboard(".simple-keyboard", {
+    onChange: input => {
+      document.getElementById("input").value = input;
+    },
+    onKeyPress: button => {
+      if (button === "{bksp}") {
+        handleBackspace();
+      }
+    },
+    layout: {
+      default: [
+        "೧ ೨ ೩ ೪ ೫ ೬ ೭ ೮ ೯ ೦ {bksp}",
+        "ಅ ಆ ಇ ಈ ಉ ಊ ಋ ಎ ಏ ಐ ಒ ಓ ಔ",
+        "ಕ ಖ ಗ ಘ ಙ ಚ ಛ ಜ ಝ ಞ",
+        "ಟ ಠ ಡ ಢ ಣ ತ ಥ ದ ಧ ನ",
+        "ಪ ಫ ಬ ಭ ಮ ಯ ರ ಲ ವ",
+        "ಶ ಷ ಸ ಹ ಳ ಕ್ಷ ಜ್ಞ",
+        "ಾ ಿ ೀ ು ೂ ೃ ೆ ೇ ೈ ೊ ೋ ೌ",
+        "ಂ ಃ ್ {space} {enter}"
+      ]
+    },
+    display: {
+      "{bksp}": "⌫",
+      "{enter}": "Enter",
+      "{space}": "Space"
+    }
+  });
+
+  function handleBackspace() {
+    const input = document.getElementById("input");
+    input.value = input.value.slice(0, -1);
+    window.keyboard.setInput(input.value);
+  }
+
+  function handlePhysicalBackspace(event) {
+    if (event.key === "Backspace") {
+      event.preventDefault();
+      handleBackspace();
+    }
+  }
+
+  function clearInput() {
+    const input = document.getElementById("input");
+    input.value = "";
+    window.keyboard.setInput("");
+  }
+</script>
+
+</body>
+</html>
