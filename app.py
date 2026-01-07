@@ -32,7 +32,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(
     BASE_DIR,
     "model",
-    "kannada_word2vec_40mb.kv"   # <-- UPDATE NAME IF DIFFERENT
+    "kannada_word2vec.model"   # <-- UPDATE NAME IF DIFFERENT
 )
 
 if not os.path.exists(MODEL_PATH):
