@@ -25,7 +25,6 @@
       color: #1f2937;
     }
 
-    /* LOGO HEADER */
     .logo-header {
       width: 100%;
       background: #1e3a8a;
@@ -42,22 +41,11 @@
       object-fit: contain;
     }
 
-    /* TITLE HEADER */
     header {
       background: #1e3a8a;
       color: #fff;
       padding: 16px;
       text-align: center;
-    }
-
-    header h1 {
-      margin: 0;
-      font-size: 26px;
-    }
-
-    header p {
-      margin-top: 6px;
-      opacity: 0.9;
     }
 
     main {
@@ -129,11 +117,6 @@
       color: #1e40af;
     }
 
-    .error {
-      color: #dc2626;
-      font-weight: 600;
-    }
-
     .plot img {
       max-width: 100%;
       border-radius: 10px;
@@ -151,15 +134,13 @@
 
 <body>
 
-<!-- LOGO -->
 <div class="logo-header">
   <img src="{{ url_for('static', filename='logo.jpg') }}" alt="App Logo">
 </div>
 
-<!-- TITLE -->
 <header>
   <h1>Kannada Word2Vec Explorer</h1>
-  <p>Semantic Similarity · Kannada Keyboard · PCA</p>
+  <p>Semantic Similarity · Kannada Keyboard · PCA Visualization</p>
 </header>
 
 <main>
@@ -175,17 +156,11 @@
           name="word"
           placeholder="ಕನ್ನಡ ಪದವನ್ನು ನಮೂದಿಸಿ"
           required
-          oninput="window.keyboard.setInput(this.value)"
+          oninput="window.keyboard_toggle.setInput(this.value)"
           onkeydown="handlePhysicalBackspace(event)"
         />
 
-        <input
-          type="number"
-          name="topn"
-          value="5"
-          min="1"
-          required
-        />
+        <input type="number" name="topn" value="5" min="1" required />
 
         <button type="submit">Find Similar</button>
         <button type="button" onclick="clearInput()" style="background:#6b7280;">
@@ -194,8 +169,35 @@
       </div>
     </form>
 
-    <!-- KEYBOARD -->
     <div class="simple-keyboard"></div>
+  </div>
+
+  <!-- INFO SECTION (ADDED) -->
+  <div class="card">
+    <h2>ℹ️ How This Works</h2>
+
+    <p><strong>Word Similarity:</strong><br>
+    This application uses a <em>Word2Vec</em> model trained on large Kannada text data.
+    Each word is represented as a numerical vector in high-dimensional space.</p>
+
+    <p><strong>Similarity Score:</strong><br>
+    When you enter a word, the model computes <em>cosine similarity</em> between the input word
+    and all other words in the vocabulary.  
+    The closer the score is to <strong>1.0</strong>, the more semantically similar the words are.</p>
+
+    <p><strong>Why Similar Words Appear:</strong><br>
+    Words that occur in similar contexts (for example, places, emotions, actions)
+    tend to have similar vector representations. This allows the model to capture
+    semantic meaning beyond exact spelling.</p>
+
+    <p><strong>PCA Visualization:</strong><br>
+    The model vectors are originally hundreds of dimensions.
+    <em>Principal Component Analysis (PCA)</em> reduces them to 2 dimensions so that
+    relationships between words can be visualized on a 2D graph.</p>
+
+    <p><strong>Graph Interpretation:</strong><br>
+    The input word is shown in <strong>red</strong>, and related words are shown in <strong>blue</strong>.
+    Words plotted closer together are more semantically related according to the model.</p>
   </div>
 
   <!-- RESULTS -->
@@ -204,7 +206,7 @@
       <h2>📊 Results</h2>
 
       {% if result == "Word not found in vocabulary." %}
-        <p class="error">{{ result }}</p>
+        <p style="color:#dc2626;font-weight:600">{{ result }}</p>
       {% else %}
         <table>
           <tr>
@@ -222,7 +224,6 @@
     </div>
   {% endif %}
 
-  <!-- PCA -->
   {% if image %}
     <div class="card plot">
       <h2>📈 PCA Visualization</h2>
@@ -236,18 +237,12 @@
   Kannada NLP · Word2Vec · Flask
 </footer>
 
-<!-- KEYBOARD LOGIC -->
 <script>
-  const Keyboard = window.SimpleKeyboard?.default || window.SimpleKeyboard;
+  const Keyboard = window.SimpleKeyboard.default;
 
-  window.keyboard = new Keyboard(".simple-keyboard", {
+  window.keyboard_toggle = new Keyboard(".simple-keyboard", {
     onChange: input => {
       document.getElementById("input").value = input;
-    },
-    onKeyPress: button => {
-      if (button === "{bksp}") {
-        handleBackspace();
-      }
     },
     layout: {
       default: [
@@ -263,28 +258,23 @@
     },
     display: {
       "{bksp}": "⌫",
-      "{enter}": "Enter",
-      "{space}": "Space"
+      "{space}": "Space",
+      "{enter}": "Enter"
     }
   });
 
-  function handleBackspace() {
-    const input = document.getElementById("input");
-    input.value = input.value.slice(0, -1);
-    window.keyboard.setInput(input.value);
-  }
-
-  function handlePhysicalBackspace(event) {
-    if (event.key === "Backspace") {
-      event.preventDefault();
-      handleBackspace();
+  function handlePhysicalBackspace(e) {
+    if (e.key === "Backspace") {
+      e.preventDefault();
+      const i = document.getElementById("input");
+      i.value = i.value.slice(0, -1);
+      keyboard_toggle.setInput(i.value);
     }
   }
 
   function clearInput() {
-    const input = document.getElementById("input");
-    input.value = "";
-    window.keyboard.setInput("");
+    document.getElementById("input").value = "";
+    keyboard_toggle.setInput("");
   }
 </script>
 
